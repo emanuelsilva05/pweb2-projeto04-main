@@ -12,13 +12,11 @@ const { body, validationResult } = require('express-validator');
  * @returns Object
  */
 const createProduct = [
-  // Upload de arquivo local (no disco)
-  upload.single('productImage'),  // Faz o upload do arquivo no disco
+  // Upload de arquivo em disco
+  upload.single('productImage'),
 
-  // Upload de arquivo na nuvem (Cloudinary)
-  uploadToCloudinary,  // Faz o upload do arquivo para o Cloudinary
-
-  // Validação dos campos
+  // Upload de arquivo em nuvem
+  uploadToCloudinary,
   body('name').notEmpty().withMessage('Nome é obrigatório'),
   body('price').isNumeric().withMessage('O preço deve ser numérico'),
 
@@ -28,26 +26,27 @@ const createProduct = [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Determinar onde o arquivo foi enviado (local ou nuvem)
-    const productImage = req.file ? req.file.filename : req.cloudinaryUrl || null;
-
-    // Preparando os dados transformados
+    // Transformação dos dados
     const transformedData = {
       ...req.body,
       id: uuidv4(),
       name: req.body.name.toLowerCase(),
-      productImage: productImage, // Armazenar a URL ou caminho do arquivo
-      expiryDate: new Date(),
+      // productImage: req.file ? req.file.filename : null, // Upload de arquivo em disco
+      productImage: req.cloudinaryUrl || null, // Upload de arquivo em nuvem
+      expiryDate: new Date()
     };
 
     try {
       const product = await Product.create(transformedData);
-      return res.status(201).json(product);
+      return res.status(201).json(
+        product
+      );
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
-  },
+  }
 ];
+
 
 /**
  * Fetches all products
@@ -58,35 +57,37 @@ const createProduct = [
 const getAllProducts = async (req, res) => {
   try {
     const products = await Product.findAll({ order: [['createdAt', 'DESC']] })
-    return res.status(200).json(products);
+
+    return res.status(200).json( products )
   } catch (error) {
-    return res.status(500).send(error.message);
+    return res.status(500).send(error.message)
   }
-};
+}
 
 /**
- * Gets a single product by its id
+ * Gets a single product by it's id
  * @param {*} req
  * @param {*} res
  * @returns boolean
  */
 const getProductById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const product = await Product.findOne({ where: { id: id } });
+    const { id } = req.params
+    const product = await Product.findOne({
+      where: { id: id }
+    })
 
     if (product) {
-      return res.status(200).json(product);
+      return res.status(200).json( product )
     }
 
-    return res.status(404).send('Product with the specified ID does not exist');
+    return res.status(404).send('Product with the specified ID does not exist')
   } catch (error) {
-    return res.status(500).send(error.message);
+    return res.status(500).send(error.message)
   }
-};
-
+}
 /**
- * Updates a single product by its id
+ * Updates a single product by it's id
  * @param {*} req
  * @param {*} res
  * @returns boolean
@@ -116,35 +117,37 @@ const updateProductById = [
       }
 
       await product.update(updatedData);
-      return res.status(200).json(product);
+      return res.status(200).json( product );
     } catch (error) {
       return res.status(500).send(error.message);
     }
   }
 ];
 
+
 /**
- * Deletes a single product by its id
+ * Deletes a single product by it's id
  * @param {*} req
  * @param {*} res
  * @returns boolean
  */
 const deleteProductById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
+
     const deletedProduct = await Product.destroy({
       where: { id: id }
-    });
+    })
 
     if (deletedProduct) {
-      return res.status(204).send('Product deleted successfully');
+      return res.status(204).send('Product deleted successfully ')
     }
 
-    throw new Error('Product not found');
+    throw new Error('Product not found')
   } catch (error) {
-    return res.status(500).send(error.message);
+    return res.status(500).send(error.message)
   }
-};
+}
 
 module.exports = {
   createProduct,
@@ -152,4 +155,4 @@ module.exports = {
   getProductById,
   deleteProductById,
   updateProductById
-};
+}
